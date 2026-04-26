@@ -572,6 +572,10 @@ impl Session {
         self.protocol.validate_send_group(group_id)
     }
 
+    pub(crate) fn local_stream_count(&self, stream_type: neqo_transport::StreamType) -> u64 {
+        self.protocol.local_stream_count(stream_type)
+    }
+
     pub(crate) fn record_stream_opened(&mut self, local: bool) {
         self.protocol.record_stream_opened(local);
     }
@@ -751,6 +755,12 @@ pub(crate) trait Protocol: Debug + Display {
     fn validate_send_group(&self, _group_id: SendGroupId) -> bool {
         // Default implementation returns false
         false
+    }
+
+    /// Returns the count of locally-initiated streams of the given type.
+    /// Used for one-way per-session stream limit enforcement (draft-15).
+    fn local_stream_count(&self, _stream_type: neqo_transport::StreamType) -> u64 {
+        0
     }
 
     fn record_bytes_sent(&mut self, _bytes: u64) {}

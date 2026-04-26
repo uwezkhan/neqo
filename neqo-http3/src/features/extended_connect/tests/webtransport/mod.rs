@@ -62,10 +62,9 @@ pub fn default_http3_server(server_params: Http3Parameters) -> Http3Server {
 }
 
 pub fn assert_wt(headers: &[Header]) {
-    assert!(
-        headers.contains_header(":method", "CONNECT")
-            && headers.contains_header(":protocol", "webtransport")
-    );
+    let has_wt_protocol = headers.contains_header(":protocol", "webtransport-h3")
+        || headers.contains_header(":protocol", "webtransport");
+    assert!(headers.contains_header(":method", "CONNECT") && has_wt_protocol);
 }
 
 fn exchange_packets(client: &mut Http3Client, server: &mut Http3Server) {

@@ -99,7 +99,8 @@ fn create_wt_session(client: &mut Http3Client, server: &mut Http3Server) -> WebT
             }) => {
                 assert!(
                     headers.contains_header(":method", "CONNECT")
-                        && headers.contains_header(":protocol", "webtransport")
+                        && (headers.contains_header(":protocol", "webtransport-h3")
+                            || headers.contains_header(":protocol", "webtransport"))
                 );
                 session
                     .response(&SessionAcceptAction::Accept, now())

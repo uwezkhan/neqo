@@ -12,7 +12,7 @@ use std::{
 };
 
 use neqo_common::{Bytes, Encoder, Header, Role, qtrace};
-use neqo_transport::{Connection, Error as TransportError, StreamId};
+use neqo_transport::{Connection, Error as TransportError, StreamId, StreamType};
 use sfv::{BareItem, Item, Parser};
 
 use crate::{
@@ -124,6 +124,24 @@ impl Session {
             self.stats.streams_opened_local += 1;
         } else {
             self.stats.streams_opened_remote += 1;
+        }
+    }
+
+    /// Count locally-initiated streams of the given type for one-way stream limit enforcement.
+    #[must_use]
+    pub(crate) fn local_stream_count(&self, stream_type: StreamType) -> u64 {
+        match stream_type {
+            StreamType::UniDi => {
+                // Local unidirectional streams: in send_streams but not bidi.
+                self.send_streams.iter().filter(|s| !s.is_bidi()).count() as u64
+            }
+            StreamType::BiDi => {
+                // Local bidirectional streams: bidi streams we initiated.
+                self.send_streams
+                    .iter()
+                    .filter(|s| s.is_bidi() && s.is_self_initiated(self.role))
+                    .count() as u64
+            }
         }
     }
 
@@ -374,6 +392,10 @@ impl Protocol for Session {
 
     fn validate_send_group(&self, group_id: SendGroupId) -> bool {
         Self::validate_send_group(self, group_id)
+    }
+
+    fn local_stream_count(&self, stream_type: StreamType) -> u64 {
+        self.local_stream_count(stream_type)
     }
 
     fn record_bytes_sent(&mut self, bytes: u64) {
